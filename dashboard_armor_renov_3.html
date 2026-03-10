@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARMOR RENOV — Dashboard Pilotage 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --primary: #1E3A5F;
+    --primary-light: #2D6A9F;
+    --accent: #F4A623;
+    --success: #27AE60;
+    --danger: #E74C3C;
+    --warning: #F39C12;
+    --info: #3498DB;
+    --bg: #F0F4F8;
+    --card: #FFFFFF;
+    --border: #DDE3EA;
+    --text: #2C3E50;
+    --text-light: #64748B;
+    --text-muted: #94A3B8;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
+  }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+
+  /* HEADER */
+  .header { background: var(--primary); color: white; padding: 0; box-shadow: 0 2px 12px rgba(0,0,0,0.2); }
+  .header-top { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; }
+  .header-logo { display: flex; align-items: center; gap: 12px; }
+  .header-logo .logo-icon { width: 40px; height: 40px; background: var(--accent); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .header-logo h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  .header-logo .subtitle { font-size: 12px; color: rgba(255,255,255,0.65); margin-top: 2px; }
+  .header-actions { display: flex; align-items: center; gap: 10px; }
+  .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+  .btn-outline { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); }
+  .btn-outline:hover { background: rgba(255,255,255,0.2); }
+  .btn-accent { background: var(--accent); color: white; }
+  .btn-accent:hover { background: #e09520; }
+  .btn-primary { background: var(--primary-light); color: white; }
+  .btn-primary:hover { background: #1a4f7a; }
+  .date-badge { background: rgba(255,255,255,0.15); padding: 6px 12px; border-radius: 20px; font-size: 12px; color: rgba(255,255,255,0.8); }
+
+  /* NAV TABS */
+  .nav-tabs { display: flex; padding: 0 24px; background: var(--primary); border-top: 1px solid rgba(255,255,255,0.1); }
+  .nav-tab { padding: 10px 18px; color: rgba(255,255,255,0.6); cursor: pointer; font-size: 13px; font-weight: 500; border-bottom: 3px solid transparent; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+  .nav-tab:hover { color: rgba(255,255,255,0.9); }
+  .nav-tab.active { color: white; border-bottom-color: var(--accent); }
+
+  /* FILTER BAR */
+  .filter-bar { background: white; border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .filter-bar-title { font-weight: 700; color: var(--primary); font-size: 13px; margin-right: 4px; white-space: nowrap; }
+  .filter-group { display: flex; align-items: center; gap: 6px; }
+  .filter-group label { font-size: 12px; color: var(--text-light); font-weight: 600; white-space: nowrap; }
+  .filter-select { padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--text); background: #FAFBFC; cursor: pointer; min-width: 130px; outline: none; }
+  .filter-select:focus { border-color: var(--primary-light); box-shadow: 0 0 0 3px rgba(45,106,159,0.1); }
+  .filter-search { padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; outline: none; min-width: 200px; }
+  .filter-search:focus { border-color: var(--primary-light); box-shadow: 0 0 0 3px rgba(45,106,159,0.1); }
+  .btn-reset { padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; background: white; cursor: pointer; font-size: 12px; color: var(--text-light); transition: all 0.15s; }
+  .btn-reset:hover { background: #f1f5f9; color: var(--danger); border-color: var(--danger); }
+  .filter-count { margin-left: auto; font-size: 12px; color: var(--text-muted); font-style: italic; }
+
+  /* PAGES */
+  .page { display: none; padding: 20px 24px; }
+  .page.active { display: block; }
+
+  /* KPI GRID */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .kpi-card { background: var(--card); border-radius: 12px; padding: 16px; box-shadow: var(--shadow); border: 1px solid var(--border); transition: transform 0.2s; position: relative; overflow: hidden; }
+  .kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 12px 12px 0 0; }
+  .kpi-card.blue::before { background: var(--primary); }
+  .kpi-card.green::before { background: var(--success); }
+  .kpi-card.orange::before { background: var(--warning); }
+  .kpi-card.red::before { background: var(--danger); }
+  .kpi-card.purple::before { background: #8E44AD; }
+  .kpi-label { font-size: 11px; font-weight: 600; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .kpi-value { font-size: 22px; font-weight: 800; color: var(--text); line-height: 1; }
+  .kpi-sub { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+  .kpi-icon { position: absolute; top: 14px; right: 14px; font-size: 22px; opacity: 0.2; }
+
+  /* CHART GRID */
+  .chart-grid { display: grid; gap: 16px; margin-bottom: 20px; }
+  .chart-grid-2 { grid-template-columns: 1fr 1fr; }
+  .chart-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .chart-grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .chart-card { background: var(--card); border-radius: 12px; padding: 18px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+  .chart-card.wide { grid-column: span 2; }
+  .chart-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+  .chart-title span { font-weight: 400; color: var(--text-muted); font-size: 12px; }
+  .chart-wrap { position: relative; }
+
+  /* ALERTS */
+  .alerts-section { margin-bottom: 20px; }
+  .alerts-section .chart-title { margin-bottom: 10px; }
+  .alert-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; border-radius: 10px; margin-bottom: 8px; font-size: 13px; }
+  .alert-item.critical { background: #FFF5F5; border: 1px solid #FECACA; }
+  .alert-item.warning { background: #FFFBEB; border: 1px solid #FDE68A; }
+  .alert-item.info { background: #EFF6FF; border: 1px solid #BFDBFE; }
+  .alert-badge { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .alert-content strong { display: block; color: var(--text); margin-bottom: 2px; }
+  .alert-content small { color: var(--text-light); }
+
+  /* TABLE */
+  .table-wrap { background: var(--card); border-radius: 12px; box-shadow: var(--shadow); border: 1px solid var(--border); overflow: hidden; }
+  .table-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .table-header .title { font-size: 14px; font-weight: 700; color: var(--text); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { background: #F8FAFC; color: var(--text-light); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; }
+  thead th:hover { background: #F0F4F8; color: var(--primary); }
+  tbody tr { transition: background 0.15s; }
+  tbody tr:hover { background: #F8FAFC; }
+  tbody td { padding: 10px 14px; border-bottom: 1px solid #F1F5F9; vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  /* BADGES */
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .badge-termine { background: #D1FAE5; color: #065F46; }
+  .badge-encours { background: #FEF3C7; color: #92400E; }
+  .badge-planifie { background: #DBEAFE; color: #1E40AF; }
+  .badge-aplanifier { background: #F3F4F6; color: #374151; }
+  .badge-interne { background: #EDE9FE; color: #5B21B6; }
+  .badge-mixte { background: #FCE7F3; color: #9D174D; }
+  .badge-st { background: #FFF7ED; color: #9A3412; }
+  .badge-danger { background: #FEE2E2; color: #991B1B; }
+  .badge-success { background: #D1FAE5; color: #065F46; }
+  .badge-warning { background: #FEF3C7; color: #92400E; }
+
+  /* PROGRESS BAR */
+  .progress { background: #E5E7EB; border-radius: 999px; height: 6px; overflow: hidden; min-width: 60px; }
+  .progress-fill { height: 100%; border-radius: 999px; transition: width 0.3s; }
+  .progress-fill.green { background: var(--success); }
+  .progress-fill.orange { background: var(--warning); }
+  .progress-fill.red { background: var(--danger); }
+  .progress-fill.blue { background: var(--primary-light); }
+
+  /* GAUGE */
+  .gauge-wrap { display: flex; flex-direction: column; align-items: center; }
+  .gauge-value { font-size: 28px; font-weight: 800; margin-top: -10px; }
+  .gauge-label { font-size: 12px; color: var(--text-muted); }
+
+  /* TOP LIST */
+  .top-list { list-style: none; }
+  .top-list li { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #F1F5F9; }
+  .top-list li:last-child { border-bottom: none; }
+  .top-rank { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .top-rank.r1 { background: #FEF3C7; color: #92400E; }
+  .top-rank.r2 { background: #F3F4F6; color: #374151; }
+  .top-rank.r3 { background: #FFF7ED; color: #9A3412; }
+  .top-rank.rn { background: #EFF6FF; color: #1E40AF; }
+  .top-name { flex: 1; font-weight: 600; font-size: 13px; }
+  .top-val { font-size: 13px; font-weight: 700; color: var(--text); }
+  .top-sub { font-size: 11px; color: var(--text-muted); }
+
+  /* IMPORT */
+  .import-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 20px; text-align: center; background: #FAFBFC; cursor: pointer; transition: all 0.2s; }
+  .import-zone:hover { border-color: var(--primary-light); background: #F0F4F8; }
+
+  /* MARGE JAUGE */
+  .marge-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .marge-bar-label { font-size: 12px; font-weight: 600; color: var(--text-light); min-width: 120px; }
+  .marge-bar-track { flex: 1; background: #E5E7EB; border-radius: 999px; height: 10px; overflow: hidden; }
+  .marge-bar-fill { height: 100%; border-radius: 999px; }
+  .marge-bar-val { font-size: 12px; font-weight: 700; min-width: 80px; text-align: right; }
+
+  /* MONTH FILTER PILL */
+  .month-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid var(--border); cursor: pointer; background: white; color: var(--text-light); transition: all 0.15s; }
+  .pill.active { background: var(--primary); color: white; border-color: var(--primary); }
+  .pill:hover:not(.active) { background: #F0F4F8; }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .chart-grid-2, .chart-grid-3, .chart-grid-4 { grid-template-columns: 1fr; }
+    .chart-card.wide { grid-column: span 1; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div class="header-logo">
+      <div class="logo-icon">🏗️</div>
+      <div>
+        <h1>ARMOR RENOV</h1>
+        <div class="subtitle">Tableau de bord pilotage 2026</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span class="date-badge" id="updateDate">📅 Mis à jour : 01/03/2026</span>
+      <label class="btn btn-outline" style="cursor:pointer;">
+        📥 Importer CSV
+        <input type="file" accept=".csv,.xlsx" id="importFile" style="display:none" onchange="importData(event)">
+      </label>
+      <button class="btn btn-accent" onclick="exportCSV()">📤 Exporter CSV</button>
+      <button class="btn btn-outline" style="color:#e74c3c;border-color:#e74c3c;font-size:12px;" onclick="resetData()" title="Effacer les données sauvegardées et recharger les données initiales">🗑️ Reset</button>
+    </div>
+  </div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="showPage('overview')">📊 Vue d'ensemble</div>
+    <div class="nav-tab" onclick="showPage('chantiers')">📋 Chantiers</div>
+    <div class="nav-tab" onclick="showPage('clients')">👥 Clients</div>
+    <div class="nav-tab" onclick="showPage('soustraitants')">🔧 Sous-traitants</div>
+    <div class="nav-tab" onclick="showPage('marge')">💰 Marge & Coûts</div>
+    <div class="nav-tab" onclick="showPage('alertes')">🚨 Alertes</div>
+  </div>
+</div>
+
+<!-- FILTER BAR (visible sur toutes les pages) -->
+<div class="filter-bar" id="filterBar">
+  <span class="filter-bar-title">🔍 Filtres</span>
+  <div class="filter-group">
+    <label>Client</label>
+    <select class="filter-select" id="fClient" onchange="applyFilters()"><option value="">Tous</option></select>
+  </div>
+  <div class="filter-group">
+    <label>Statut</label>
+    <select class="filter-select" id="fStatut" onchange="applyFilters()">
+      <option value="">Tous</option>
+      <option>Terminé</option><option>En cours</option><option>Planifié</option><option>A planifier</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Type chantier</label>
+    <select class="filter-select" id="fType" onchange="applyFilters()"><option value="">Tous</option></select>
+  </div>
+  <div class="filter-group">
+    <label>Réalisation</label>
+    <select class="filter-select" id="fReal" onchange="applyFilters()">
+      <option value="">Tous</option>
+      <option>100% Interne</option><option>Mixte</option><option>100% Sous-traitant</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Mois</label>
+    <select class="filter-select" id="fMois" onchange="applyFilters()">
+      <option value="">Tous</option>
+      <option value="01">Janvier</option><option value="02">Février</option><option value="03">Mars</option>
+      <option value="04">Avril</option><option value="05">Mai</option><option value="06">Juin</option>
+      <option value="07">Juillet</option><option value="08">Août</option><option value="09">Septembre</option>
+      <option value="10">Octobre</option><option value="11">Novembre</option><option value="12">Décembre</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <input class="filter-search" type="text" id="fSearch" placeholder="🔍 Rechercher client, adresse, devis..." oninput="applyFilters()">
+  </div>
+  <button class="btn-reset" onclick="resetFilters()">✕ Réinitialiser</button>
+  <span class="filter-count" id="filterCount"></span>
+</div>
+
+<!-- PAGE: VUE D'ENSEMBLE -->
+<div class="page active" id="page-overview">
+  <div class="kpi-grid" id="kpiGrid"></div>
+  <div class="chart-grid chart-grid-2" style="margin-bottom:16px;">
+    <div class="chart-card">
+      <div class="chart-title">🍩 Répartition par statut</div>
+      <div class="chart-wrap" style="height:200px;"><canvas id="chartStatuts"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">🏗️ Répartition par type de réalisation</div>
+      <div class="chart-wrap" style="height:200px;"><canvas id="chartRealisation"></canvas></div>
+    </div>
+  </div>
+  <div class="chart-grid chart-grid-2" style="margin-bottom:16px;">
+    <div class="chart-card wide">
+      <div class="chart-title">📅 CA signé par mois <span>— Répartition mensuelle</span></div>
+      <div class="chart-wrap" style="height:220px;"><canvas id="chartMois"></canvas></div>
+    </div>
+  </div>
+  <div class="chart-grid chart-grid-2">
+    <div class="chart-card">
+      <div class="chart-title">🏆 Top clients <span>— par CA signé</span></div>
+      <ul class="top-list" id="topClients"></ul>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">🚨 Alertes actives</div>
+      <div id="alertsOverview"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: CHANTIERS -->
+<div class="page" id="page-chantiers">
+  <div class="table-wrap">
+    <div class="table-header">
+      <span class="title" id="chantiersCount">📋 Tous les chantiers</span>
+      <div style="display:flex;gap:8px;">
+        <select class="filter-select" id="fSort" onchange="renderChantiers()">
+          <option value="date_saisie_desc">Date ↓</option>
+          <option value="date_saisie_asc">Date ↑</option>
+          <option value="ca_ht_desc">CA ↓</option>
+          <option value="ca_ht_asc">CA ↑</option>
+          <option value="client_asc">Client A→Z</option>
+        </select>
+      </div>
+    </div>
+    <div style="overflow-x:auto;"><table id="chantiersTable">
+      <thead><tr>
+        <th>Date</th><th>Devis</th><th>Client</th><th>Type</th><th>Réalisation</th>
+        <th>CA HT</th><th>Avancement</th><th>Facturé</th><th>Encours</th><th>Reste à facturer</th><th>Statut</th>
+      </tr></thead>
+      <tbody id="chantiersBody"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- PAGE: CLIENTS -->
+<div class="page" id="page-clients">
+  <div class="chart-grid chart-grid-2" style="margin-bottom:16px;">
+    <div class="chart-card wide">
+      <div class="chart-title">📊 CA par client <span>— Signé vs Facturé</span></div>
+      <div class="chart-wrap" style="height:280px;"><canvas id="chartClients"></canvas></div>
+    </div>
+  </div>
+  <div id="clientCards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;"></div>
+</div>
+
+<!-- PAGE: SOUS-TRAITANTS -->
+<div class="page" id="page-soustraitants">
+  <div class="chart-grid chart-grid-2" style="margin-bottom:16px;">
+    <div class="chart-card">
+      <div class="chart-title">🔧 Devisé vs Facturé par sous-traitant</div>
+      <div class="chart-wrap" style="height:280px;"><canvas id="chartST"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">📋 Détail sous-traitants</div>
+      <div id="stDetail"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: MARGE -->
+<div class="page" id="page-marge">
+  <div class="kpi-grid" id="margeKpis"></div>
+  <div class="chart-grid chart-grid-2">
+    <div class="chart-card">
+      <div class="chart-title">💰 CA interne vs Coût salarial</div>
+      <div class="chart-wrap" style="height:240px;"><canvas id="chartMarge"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">📈 Taux de couverture & Projection</div>
+      <div id="margeDetails"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: ALERTES -->
+<div class="page" id="page-alertes">
+  <div class="chart-grid chart-grid-3">
+    <div class="chart-card" id="alertsCrit">
+      <div class="chart-title" style="color:var(--danger);">🚨 Critiques</div>
+    </div>
+    <div class="chart-card" id="alertsWarn">
+      <div class="chart-title" style="color:var(--warning);">⚠️ Attention</div>
+    </div>
+    <div class="chart-card" id="alertsInfo">
+      <div class="chart-title" style="color:var(--info);">📋 Suivi</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA — EMBEDDED FROM CSV EXPORT
+// ============================================================
+const RAW_DATA = [{"date_saisie": "2026-01-05", "devis": 25121670.0, "client": "CHARLY HEBDO", "adresse": "235 bis rue de Tolbiac 75013 Paris", "statut": "Terminé", "type_realisation": "100% Sous-traitant", "type_chantier": "Autre", "ca_ht": 1650.0, "avancement": 1.0, "ca_theo": 1650.0, "acompte_facture": "", "acompte_pct": 0.0, "encours": 0.0, "facture_total": 1650, "reste_facturer": 0.0, "commentaire": 867.4, "st_name": "", "st_corps": "", "st_devise": 867.4, "st_facture": 867.4, "p_cout_jour": 1130.5, "p_cout_cumul": 46350.5, "p_ca_int_cumul": 62315.0, "p_marge": 15964.5, "p_taux_couv": 1.3444299414245802, "p_jours_eco": 41.0, "p_jours_an": 252.0, "p_etp": 4.0, "p_taux_h": 38.0}, {"date_saisie": "2026-01-06", "devis": 25121659.0, "client": "ELISABETH MASSON", "adresse": "22 Résidence les jardins 78660 Boinville-le-Gaillard", "statut": "Terminé", "type_realisation": "Mixte", "type_chantier": "Maison", "ca_ht": 15080.0, "avancement": 1.0, "ca_theo": 15080.0, "acompte_facture": 15080.0, "acompte_pct": 1.0, "encours": 0.0, "facture_total": 15080, "reste_facturer": 0.0, "commentaire": 4200.0, "st_name": "", "st_corps": "", "st_devise": 4200.0, "st_facture": 4200.0}, {"date_saisie": "2026-01-06", "devis": 25111636.0, "client": "KINTESSIA", "adresse": "123 Rue Henri Pauquet 60100 Creil", "statut": "A planifier", "type_realisation": "100% Interne", "type_chantier": "Peinture", "ca_ht": 750.0, "avancement": 0.0, "ca_theo": 0.0, "acompte_facture": "", "acompte_pct": 0.0, "encours": 0.0, "facture_total": 0, "reste_facturer": 750.0, "commentaire": 0.0, "st_name": "", "st_corps": "", "st_devise": 0.0, "st_facture": 0.0}, {"date_saisie": "2026-01-06", "devis": 24050975.0, "client": "DAUCHEZ", "adresse": "18 rue André Del Sarte 75018 Paris", "statut": "Terminé", "type_realisation": "100% Sous-traitant", "type_chantier": "Appartement", "ca_ht": 920.0, "avancement": 1.0, "ca_theo": 920.0, "acompte_facture": "", "acompte_pct": 0.0, "encours": 0.0, "facture_total": 920, "reste_facturer": 0.0, "commentaire": 644.0, "st_name": "", "st_corps": "", "st_devise": 644.0, "st_facture": 0.0}, {"date_saisie": "2026-01-06", "devis": 25101585.0, "client": "TOMASENA", "adresse": "9 Rue Sainte-Isaure 75018 Paris", "statut": "Terminé", "type_realisation": "Mixte", "type_chantier": "Appartement", "ca_ht": 26160.0, "avancement": 1.0, "ca_theo": 26160.0, "acompte_facture": 26160.0, "acompte_pct": 1.0, "encours": 0.0, "facture_total": 26160, "reste_facturer": 0.0, "commentaire": 7600.0, "st_name": "", "st_corps": "", "st_devise": 3000.0, "st_facture": 3000.0}, {"date_saisie": "2026-01-06", "devis": 24111165.0, "client": "ATRIUM GESTION", "adresse": "Bel Abord 36 Avenue Mazarin 91380 Chilly Mazarin", "statut": "A planifier", "type_realisation": "100% Sous-traitant", "type_chantier": "Façade", "ca_ht": 9184.0, "avancement": 0.0, "ca_theo": 0.0, "acompte_facture": "", "acompte_pct": 0.0, "encours": 0.0, "facture_total": 0, "reste_facturer": 9184.0, "commentaire": 0.0, "st_name": "", "st_corps": "", "st_devise": 0.0, "st_facture": 0.0}, {"date_saisie": "2026-01-06", "devis": 25111639.0, "client": "ATRIUM GESTION", "adresse": "Les Jardins de Villejuif 1/15 allée Berlioz 94800 Villejuif", "statut": "Terminé", "type_realisation": "100% Interne", "type_chantier": "Façade", "ca_ht": 1200.0, "avancement": 1.0, "ca_theo": 1200.0, "acompte_facture": "", "acompte_pct": 0.0, "encours": 1200.0, "facture_total": 0, "reste_facturer": 1200.0, "commentaire": 0.0, "st_name": "", "st_corps": "", "st_devise": 0.0, "st_facture": 0.0}, {"date_saisie": "2026-01-06", "devis": 25121663.0, "client": "TOUSSAINT", "adresse": "56 Rue de la federation 75015 Paris bat B", "statut": "Terminé", "type_realisation": "100% Interne", "type_chantier": "Salle de bain", "ca_ht": 650.0, "avancement": 1.0, "ca_theo": 650.0, "acompte_facture": 650.0, "acompte_pct": 1.0, "encours": 0.0, "facture_total": 650, "reste_facturer": 0.0, "commentaire": 0.0, "st_name": "", "st_corps": "", "st_devise": 0.0, "st_facture": 0.0}, {"date_saisie": "2026-01-01", "devis": 25101623.0, "client": "CHARLY HEBDO", "adresse": "235 bis rue de Tolbiac 75013 Paris", "statut": "Terminé", "type_realisation": "100% Interne", "type_chantier": "Cuisine", "ca_ht": 8196.0, "avancement": 1.0, "ca_theo": 8196.0, "acompte_facture": 8196.0, "acompte_pct": 1.0, "encours": 0.0, "facture_total": 8196, "reste_facturer": 0.0, "commentaire": 100.0, "st_name": "", "st_corps": "", "st_devise": 100.0, "st_facture": 100.0}, {"date_saisie": "2026-01-01", "devis": 25111627.0, "client": "OPTIMMO GESTION", "adresse": "56 Bis rue de la Fédération 75015 PARIS", "statut": "En cours", "type_realisation": "100% Interne", "type_chantier": "Autre", "ca_ht": 510.0, "avancement": 0.15, "ca_theo": 76.5, "acompte_facture": "", "acompte_pct": 0.0, "encours": 76.5, "facture_total": 0, "reste_facturer": 510.0, "commentaire": 0.0, "st_name": "", "st_corps": "", "st_devise": 0.0, "st_facture": 0.0}, {"date_saisie": "2026-01-10", "devis": 26011678.0, "client": "ATRIUM GESTION", "adresse": "45 Rue Decamps 75016 Paris", "statut": "Terminé", "type_realisation": "100% Interne", "type_chantier": "Peinture", "ca_ht": 1400.0, "avancement": 1.0, "ca_theo": 1400.0, "acompte_facture": "", "acompte_pct": 0.0, "encours": 1400.0, "facture_total": 0, "reste_facturer": 1400.0, "commentaire": 980.0, "st_name": "", "st_corps": "", "st_devise": 980.0, "st_facture": 0.0}, {"date_saisie": "2026-01-14", "devis": 26011679.0, "client": "CHARLY HEBDO", "adresse": "235 bis rue de Tolbiac 75013 Paris", "statut": "En cours", "type_realisation": "100% Interne", "type_chantier": "Autre", "ca_ht": 6950.0, "avancement": 0.15, "ca_theo": 1042.5, "acompte_facture": 2780.0, "acompte_pct": 0.4, "encours": 1042.5, "facture_total": 0, "reste_facturer": 6950.0, "commentaire": 0.0, "st_name": "", "st_corps": "", "st_devise": 0.0, "st_facture": 0.0}, {"date_saisie": "2026-01-20", "devis": 25101587.0, "client": "DAUCHEZ", "adresse": "110 Rue vielle du temple résidence D'Hozier 75003 Paris", "statut": "En cours", "type_realisation": "100% Sous-traitant", "type_chantier": "Appartement", "ca_ht": 22830.0, "avancement": 0.75, "ca_theo": 17122.5, "acompte_facture": 9132.0, "acompte_pct": 0.4, "encours": 7990.5, "facture_total": 9132, "reste_facturer": 13698.0, "commentaire": 13146.0, "st_name": "", "st_corps": "", "st_devise": 13146.0, "st_facture": 10000.0}, {"date_saisie": "2026-01-22", "devis": 25111645.0, "client": "ATRIUM GESTION", "adresse": "26 Rue Saint Suplice 75006 Paris", "statut": "Planifié", "type_realisation": "100% Interne", "type_chantier": "Cage d'escalier", "ca_ht": 4680.8, "avancement": 0.0, "ca_theo": 0.0, "acompte_facture": 0.0, "acompte_pct": 0.0, "encours": 0.0, "facture_total": 0, "reste_facturer": 4680.8, "commentaire": 2520.0, "st_name": "", "st_corps": "", "st_devise": 2520.0, "st_facture": 2520.0}, {"date_saisie": "2026-01-27", "devis": 26011693.0, "client": "JEANNE BARBÉ", "adresse": "56 rue de la Fédération 75015 Paris Bat H", "statut": "Terminé", "type_realisation": "100% Interne", "type_chantier": "Salle de bain", "ca_ht": 390.0, "avancement": 1.0, "ca_theo": 390.0, "acompte_facture": 0.0, "acompte_pct": 0.0, "encours": 0.0, "facture_total": 390, "reste_facturer": 0.0, "commentaire": 0.0, "st_name": "", "st_corps": "", "st_devise": 0.0, "st_facture": 0.0}, {"date_saisie": "2026-01-28", "devis": 25121671.0, "client": "DAUCHEZ", "adresse": "49 Avenue Victor Hugo 92100 Boulogne Billancourt", "statut": "A planifier", "type_realisation": "100% Sous-traitant", "type_chantier": "Appartement", "ca_ht": 1170.0, "avancement": 0.0, "ca_theo": 0.0, "acompte_facture": 0.0, "acompte_pct": 0.0, "encours": 0.0, "facture_total": 0, "reste_facturer": 1170.0, "commentaire": 819.0, "st_name": "", "st_corps": "", "st_devise": 819.0, "st_facture": 0.0}, {"date_saisie": "2026-01-30", "devis": 26011705.0, "client": "FITZ GROUP", "adresse": "47 Avenue de la Motte-Picquet 75007 Paris", "statut": "Terminé", "type_realisation": "100% Interne", "type_chantier": "Multiservice", "ca_ht": 225.0, "avancement": 1.0, "ca_theo": 225.0, "acompte_facture": 0.0, "acompte_pct": 0.0, "encours": 0.0, "facture_total": 225, "reste_facturer": 0.0, "commentaire": 0.0, "st_name": "", "st_corps": "", "st_devise": 0.0, "st_facture": 0.0}, {"date_saisie": "2026-02-04", "devis": 26011695.0, "client": "KINTESSIA", "adresse": "PAPREC TRIVALORISATION", "statut": "Terminé", "type_realisation": "100% Sous-traitant", "type_chantier": "Autre", "ca_ht": 3472.0, "avancement": 1.0, "ca_theo": 3472.0, "acompte_facture": 0.0, "acompte_pct": 0.0, "encours": 3472.0, "facture_total": 0, "reste_facturer": 3472.0, "commentaire": 2480.0, "st_name": "", "st_corps": "", "st_devise": 2480.0, "st_facture": 0.0}, {"date_saisie": "2026-02-04", "devis": 26011704.0, "client": "CHARLY HEBDO", "adresse": "236 bis rue de Tolbiac 75013 PARIS", "statut": "Terminé", "type_realisation": "100% Interne", "type_chantier": "Multiservice", "ca_ht": 475.0, "avancement": 1.0, "ca_theo": 475.0, "acompte_facture": 0.0, "acompte_pct": 0.0, "encours": 475.0, "facture_total": 0, "reste_facturer": 475.0, "commentaire": 0.0, "st_name": "", "st_corps": "", "st_devise": 0.0, "st_facture": 0.0}, {"date_saisie": "2026-02-04", "devis": 25121675.0, "client": "ATRIUM GESTION", "adresse": "52-56 Avenue Raymond Poincare 75116 Paris", "statut": "Terminé", "type_realisation": "100% Interne", "type_chantier": "Cage d'escalier", "ca_ht": 1100.0, "avancement": 1.0, "ca_theo": 1100.0, "acompte_facture": 1100.0, "acompte_pct": 1.0, "encours": 0.0, "facture_total": 1100, "reste_facturer": 0.0, "commentaire": 0.0, "st_name": "", "st_corps": "", "st_devise": 0.0, "st_facture": 0.0}, {"date_saisie": "2026-02-09", "devis": 25111626.0, "client": "ATRIUM GESTION", "adresse": "41 Rue Censier 75005 Paris", "statut": "Terminé", "type_realisation": "100% Interne", "type_chantier": "Cage d'escalier", "ca_ht": 1620.0, "avancement": 1.0, "ca_theo": 1620.0, "acompte_facture": 1620.0, "acompte_pct": 1.0, "encours": 0.0, "facture_total": 1620, "reste_facturer": 0.0, "commentaire": 0.0, "st_name": "", "st_corps": "", "st_devise": 0.0, "st_facture": 0.0}, {"date_saisie": "2026-02-11", "devis": 26011688.0, "client": "DAUCHEZ", "adresse": "22 rue Vicq d'Azir 75010 Paris", "statut": "Terminé", "type_realisation": "100% Sous-traitant", "type_chantier": "Appartement", "ca_ht": 305.0, "avancement": 1.0, "ca_theo": 305.0, "acompte_facture": 305.0, "acompte_pct": 1.0, "encours": 0.0, "facture_total": 305, "reste_facturer": 0.0, "commentaire": 213.5, "st_name": "", "st_corps": "", "st_devise": 213.5, "st_facture": 213.5}, {"date_saisie": "2026-02-11", "devis": 26011683.0, "client": "ATRIUM GESTION", "adresse": "68 Rue Des Plantes 75014 Paris", "statut": "Planifié", "type_realisation": "100% Interne", "type_chantier": "Autre", "ca_ht": 1350.0, "avancement": 0.0, "ca_theo": 0.0, "acompte_facture": 0.0, "acompte_pct": 0.0, "encours": 0.0, "facture_total": 0, "reste_facturer": 1350.0, "commentaire": 0.0, "st_name": "", "st_corps": "", "st_devise": 0.0, "st_facture": 0.0}, {"date_saisie": "2026-02-12", "devis": 25031341.0, "client": "DAUCHEZ", "adresse": "48-50 Av du Roule 92200 Neuilly sur Seine", "statut": "Terminé", "type_realisation": "100% Sous-traitant", "type_chantier": "Appartement", "ca_ht": 1270.0, "avancement": 1.0, "ca_theo": 1270.0, "acompte_facture": 0.0, "acompte_pct": 0.0, "encours": 1270.0, "facture_total": 0, "reste_facturer": 1270.0, "commentaire": 980.0, "st_name": "", "st_corps": "", "st_devise": 980.0, "st_facture": 0.0}, {"date_saisie": "2026-02-13", "devis": 26021726.0, "client": "CHARLY HEBDO", "adresse": "236 bis rue de Tolbiac 75013 PARIS", "statut": "Terminé", "type_realisation": "100% Sous-traitant", "type_chantier": "Bureaux", "ca_ht": 1950.0, "avancement": 1.0, "ca_theo": 1950.0, "acompte_facture": 1950.0, "acompte_pct": 1.0, "encours": 0.0, "facture_total": 1950, "reste_facturer": 0.0, "commentaire": 460.0, "st_name": "", "st_corps": "", "st_devise": 460.0, "st_facture": 460.0}, {"date_saisie": "2026-02-13", "devis": 26011689.0, "client": "ASSOCIATION NOTRE DAME DE BON SECOURS", "adresse": "68 Rue des plantes 75014 Paris", "statut": "Terminé", "type_realisation": "100% Interne", "type_chantier": "Autre", "ca_ht": 900.0, "avancement": 1.0, "ca_theo": 900.0, "acompte_facture": 900.0, "acompte_pct": 1.0, "encours": 0.0, "facture_total": 900, "reste_facturer": 0.0, "commentaire": 0.0, "st_name": "", "st_corps": "", "st_devise": 0.0, "st_facture": 0.0}, {"date_saisie": "2026-02-16", "devis": 26021727.0, "client": "ATRIUM GESTION", "adresse": "46/46 BIS RUE DE LA POMPE 75016 PARIS", "statut": "Terminé", "type_realisation": "100% Interne", "type_chantier": "Cage d'escalier", "ca_ht": 1200.0, "avancement": 1.0, "ca_theo": 1200.0, "acompte_facture": 1200.0, "acompte_pct": 1.0, "encours": 0.0, "facture_total": 1200, "reste_facturer": 0.0, "commentaire": 0.0, "st_name": "", "st_corps": "", "st_devise": 0.0, "st_facture": 0.0}, {"date_saisie": "2026-02-16", "devis": 26021733.0, "client": "CHARLY HEBDO", "adresse": "236 bis rue de Tolbiac 75013 PARIS", "statut": "Terminé", "type_realisation": "100% Interne", "type_chantier": "Multiservice", "ca_ht": 1650.0, "avancement": 1.0, "ca_theo": 1650.0, "acompte_facture": 1650.0, "acompte_pct": 1.0, "encours": 0.0, "facture_total": 1650, "reste_facturer": 0.0, "commentaire": 0.0, "st_name": "", "st_corps": "", "st_devise": 0.0, "st_facture": 0.0}, {"date_saisie": "2026-02-16", "devis": 26021735.0, "client": "ATRIUM GESTION", "adresse": "26 Rue Singer 75016 Paris", "statut": "Terminé", "type_realisation": "100% Interne", "type_chantier": "Multiservice", "ca_ht": 950.0, "avancement": 1.0, "ca_theo": 950.0, "acompte_facture": 950.0, "acompte_pct": 1.0, "encours": 0.0, "facture_total": 950, "reste_facturer": 0.0, "commentaire": 0.0, "st_name": "", "st_corps": "", "st_devise": 0.0, "st_facture": 0.0}, {"date_saisie": "2026-02-18", "devis": 26021710.0, "client": "CHARLY HEBDO", "adresse": "236 bis rue de Tolbiac 75013 PARIS", "statut": "Planifié", "type_realisation": "100% Interne", "type_chantier": "Multiservice", "ca_ht": 8650.0, "avancement": 0.0, "ca_theo": 0.0, "acompte_facture": 3460.0, "acompte_pct": 0.4, "encours": 0.0, "facture_total": 3460, "reste_facturer": 5190.0, "commentaire": 0.0, "st_name": "", "st_corps": "", "st_devise": 0.0, "st_facture": 0.0}, {"date_saisie": "2026-02-19", "devis": 26021734.0, "client": "ASSOCIATION NOTRE DAME DE BON SECOURS", "adresse": "68 Rue des plantes 75014 Paris", "statut": "Planifié", "type_realisation": "100% Interne", "type_chantier": "Multiservice", "ca_ht": 2450.0, "avancement": 0.0, "ca_theo": 0.0, "acompte_facture": 0.0, "acompte_pct": 0.0, "encours": 0.0, "facture_total": 0, "reste_facturer": 2450.0, "commentaire": 0.0, "st_name": "", "st_corps": "", "st_devise": 0.0, "st_facture": 0.0}];
+
+const PARAMS = {p_cout_jour:1130.5,p_cout_cumul:46350.5,p_ca_int_cumul:62315.0,p_marge:15964.5,p_taux_couv:1.3444,p_jours_eco:41,p_jours_an:252,p_etp:4,p_taux_h:38};
+
+// ============================================================
+// PERSISTANCE LOCALE (localStorage)
+// ============================================================
+const STORAGE_KEY = 'armor_renov_data';
+const STORAGE_DATE_KEY = 'armor_renov_import_date';
+
+function saveToStorage(dataToSave, importDate) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+    localStorage.setItem(STORAGE_DATE_KEY, importDate || new Date().toLocaleDateString('fr-FR'));
+  } catch(e) { console.warn('Sauvegarde locale impossible:', e); }
+}
+
+function loadFromStorage() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    const savedDate = localStorage.getItem(STORAGE_DATE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) return { data: parsed, date: savedDate };
+    }
+  } catch(e) { console.warn('Chargement local impossible:', e); }
+  return null;
+}
+
+function clearStorage() {
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(STORAGE_DATE_KEY);
+}
+
+// Charger depuis storage ou fallback sur RAW_DATA
+const savedState = loadFromStorage();
+let data, _importDate;
+if (savedState) {
+  data = savedState.data.map(r=>({...r, ca_ht:+r.ca_ht||0, encours:+r.encours||0, facture_total:+r.facture_total||0, reste_facturer:+r.reste_facturer||0, avancement:+r.avancement||0, st_devise:+r.st_devise||0, st_facture:+r.st_facture||0}));
+  _importDate = savedState.date;
+} else {
+  data = RAW_DATA.map(r=>({...r, ca_ht:+r.ca_ht||0, encours:+r.encours||0, facture_total:+r.facture_total||0, reste_facturer:+r.reste_facturer||0, avancement:+r.avancement||0, st_devise:+r.st_devise||0, st_facture:+r.st_facture||0}));
+  _importDate = null;
+}
+let filteredData = [...data];
+const charts = {};
+
+// ============================================================
+// HELPERS
+// ============================================================
+const fmt = (n, d=0) => new Intl.NumberFormat('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d}).format(n) + ' €';
+const fmtN = (n) => new Intl.NumberFormat('fr-FR').format(n);
+const pct = (n) => (n*100).toFixed(1) + '%';
+
+function statutBadge(s) {
+  const map = {'Terminé':'termine','En cours':'encours','Planifié':'planifie','A planifier':'aplanifier'};
+  const icons = {'Terminé':'✅','En cours':'🔄','Planifié':'📅','A planifier':'🕐'};
+  return `<span class="badge badge-${map[s]||'aplanifier'}">${icons[s]||''} ${s}</span>`;
+}
+function realBadge(r) {
+  const map = {'100% Interne':'interne','Mixte':'mixte','100% Sous-traitant':'st'};
+  return `<span class="badge badge-${map[r]||'interne'}">${r}</span>`;
+}
+function progBar(v, color='green') {
+  return `<div style="display:flex;align-items:center;gap:6px;"><div class="progress"><div class="progress-fill ${color}" style="width:${Math.round(v*100)}%"></div></div><span style="font-size:11px;color:var(--text-muted)">${Math.round(v*100)}%</span></div>`;
+}
+function destroyChart(id) { if(charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+// ============================================================
+// FILTER SETUP
+// ============================================================
+function setupFilters() {
+  const clients = [...new Set(data.map(r=>r.client.trim()))].sort();
+  const types = [...new Set(data.map(r=>r.type_chantier))].sort();
+  const fC = document.getElementById('fClient');
+  const fT = document.getElementById('fType');
+  clients.forEach(c => { const o = document.createElement('option'); o.value=c; o.textContent=c; fC.appendChild(o); });
+  types.forEach(t => { const o = document.createElement('option'); o.value=t; o.textContent=t; fT.appendChild(o); });
+}
+
+function applyFilters() {
+  const fC = document.getElementById('fClient').value;
+  const fS = document.getElementById('fStatut').value;
+  const fT = document.getElementById('fType').value;
+  const fR = document.getElementById('fReal').value;
+  const fM = document.getElementById('fMois').value;
+  const fSrch = document.getElementById('fSearch').value.toLowerCase();
+
+  filteredData = data.filter(r => {
+    if(fC && r.client.trim() !== fC) return false;
+    if(fS && r.statut !== fS) return false;
+    if(fT && r.type_chantier !== fT) return false;
+    if(fR && r.type_realisation !== fR) return false;
+    if(fM && r.date_saisie && !r.date_saisie.startsWith(`2026-${fM}`)) return false;
+    if(fSrch && !(r.client.toLowerCase().includes(fSrch) || r.adresse.toLowerCase().includes(fSrch) || String(r.devis).includes(fSrch))) return false;
+    return true;
+  });
+
+  const total = filteredData.length;
+  const filtered = total < data.length;
+  document.getElementById('filterCount').textContent = filtered ? `${total} chantier${total>1?'s':''} affiché${total>1?'s':''} sur ${data.length}` : '';
+
+  renderAll();
+}
+
+function resetFilters() {
+  document.getElementById('fClient').value='';
+  document.getElementById('fStatut').value='';
+  document.getElementById('fType').value='';
+  document.getElementById('fReal').value='';
+  document.getElementById('fMois').value='';
+  document.getElementById('fSearch').value='';
+  filteredData = [...data];
+  document.getElementById('filterCount').textContent='';
+  renderAll();
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  renderAll();
+}
+
+// ============================================================
+// RENDER ALL
+// ============================================================
+function renderAll() {
+  const p = document.querySelector('.page.active').id.replace('page-','');
+  if(p==='overview') renderOverview();
+  if(p==='chantiers') renderChantiers();
+  if(p==='clients') renderClients();
+  if(p==='soustraitants') renderST();
+  if(p==='marge') renderMarge();
+  if(p==='alertes') renderAlertes();
+}
+
+// ============================================================
+// OVERVIEW
+// ============================================================
+function renderOverview() {
+  const d = filteredData;
+  const ca = d.reduce((s,r)=>s+r.ca_ht,0);
+  const fact = d.reduce((s,r)=>s+r.facture_total,0);
+  const enc = d.reduce((s,r)=>s+r.encours,0);
+  const raf = d.reduce((s,r)=>s+r.reste_facturer,0);
+  const termine = d.filter(r=>r.statut==='Terminé').length;
+  const encours = d.filter(r=>r.statut==='En cours').length;
+  const planif = d.filter(r=>r.statut==='Planifié').length;
+  const aplan = d.filter(r=>r.statut==='A planifier').length;
+
+  // KPIs
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi-card blue"><div class="kpi-icon">💰</div><div class="kpi-label">CA Signé</div><div class="kpi-value">${fmt(ca)}</div><div class="kpi-sub">${d.length} chantier${d.length>1?'s':''}</div></div>
+    <div class="kpi-card green"><div class="kpi-icon">✅</div><div class="kpi-label">CA Facturé</div><div class="kpi-value">${fmt(fact)}</div><div class="kpi-sub">${pct(ca?fact/ca:0)} du CA</div></div>
+    <div class="kpi-card orange"><div class="kpi-icon">⏳</div><div class="kpi-label">Encours HT</div><div class="kpi-value">${fmt(enc)}</div><div class="kpi-sub">À relancer</div></div>
+    <div class="kpi-card red"><div class="kpi-icon">📄</div><div class="kpi-label">Reste à facturer</div><div class="kpi-value">${fmt(raf)}</div><div class="kpi-sub">À émettre</div></div>
+    <div class="kpi-card blue"><div class="kpi-icon">✅</div><div class="kpi-label">Terminés</div><div class="kpi-value">${termine}</div><div class="kpi-sub">chantiers</div></div>
+    <div class="kpi-card orange"><div class="kpi-icon">🔄</div><div class="kpi-label">En cours</div><div class="kpi-value">${encours}</div><div class="kpi-sub">chantiers</div></div>
+    <div class="kpi-card purple"><div class="kpi-icon">📅</div><div class="kpi-label">Planifiés</div><div class="kpi-value">${planif}</div><div class="kpi-sub">chantiers</div></div>
+    <div class="kpi-card red"><div class="kpi-icon">🕐</div><div class="kpi-label">À planifier</div><div class="kpi-value">${aplan}</div><div class="kpi-sub">chantiers</div></div>
+  `;
+
+  // Chart statuts
+  destroyChart('chartStatuts');
+  charts['chartStatuts'] = new Chart(document.getElementById('chartStatuts'), {
+    type:'doughnut',
+    data:{labels:['Terminé','En cours','Planifié','À planifier'],datasets:[{data:[termine,encours,planif,aplan],backgroundColor:['#27AE60','#F4A623','#3498DB','#95A5A6'],borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:12}}}}
+  });
+
+  // Chart réalisation
+  const real = {};
+  d.forEach(r=>{ real[r.type_realisation]=(real[r.type_realisation]||0)+r.ca_ht; });
+  destroyChart('chartRealisation');
+  charts['chartRealisation'] = new Chart(document.getElementById('chartRealisation'), {
+    type:'doughnut',
+    data:{labels:Object.keys(real),datasets:[{data:Object.values(real),backgroundColor:['#8E44AD','#E67E22','#2980B9'],borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:12}}}}
+  });
+
+  // Chart par mois
+  const moisLabels = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+  const caParMois = new Array(12).fill(0), factParMois = new Array(12).fill(0);
+  d.forEach(r=>{
+    if(r.date_saisie) { const m = parseInt(r.date_saisie.split('-')[1])-1; caParMois[m]+=r.ca_ht; factParMois[m]+=r.facture_total; }
+  });
+  const moisActifs = moisLabels.filter((_,i)=>caParMois[i]>0||factParMois[i]>0);
+  const caActif = caParMois.filter((_,i)=>caParMois[i]>0||factParMois[i]>0);
+  const factActif = factParMois.filter((_,i)=>caParMois[i]>0||factParMois[i]>0);
+
+  destroyChart('chartMois');
+  charts['chartMois'] = new Chart(document.getElementById('chartMois'), {
+    type:'bar',
+    data:{labels:moisActifs,datasets:[
+      {label:'CA Signé HT',data:caActif,backgroundColor:'rgba(30,58,95,0.7)',borderRadius:6},
+      {label:'Facturé HT',data:factActif,backgroundColor:'rgba(39,174,96,0.7)',borderRadius:6}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:11}}}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>v>=1000?Math.round(v/1000)+'k €':v+' €'}}}}
+  });
+
+  // Top clients
+  const clientCA = {};
+  d.forEach(r=>{ const c=r.client.trim(); if(!clientCA[c]) clientCA[c]={ca:0,fact:0,enc:0}; clientCA[c].ca+=r.ca_ht; clientCA[c].fact+=r.facture_total; clientCA[c].enc+=r.encours; });
+  const topC = Object.entries(clientCA).sort((a,b)=>b[1].ca-a[1].ca).slice(0,5);
+  const rankCls = ['r1','r2','r3','rn','rn'];
+  document.getElementById('topClients').innerHTML = topC.map(([name,v],i)=>`
+    <li><div class="top-rank ${rankCls[i]}">${i+1}</div>
+    <div style="flex:1"><div class="top-name">${name}</div><div class="top-sub">Facturé: ${fmt(v.fact)} | Enc: ${fmt(v.enc)}</div></div>
+    <div class="top-val">${fmt(v.ca)}</div></li>
+  `).join('');
+
+  // Alerts overview
+  const alerts = getAlerts(d);
+  const alertsHtml = [...alerts.critical,...alerts.warning].slice(0,5).map(a=>`
+    <div class="alert-item ${a.level}"><span class="alert-badge">${a.icon}</span>
+    <div class="alert-content"><strong>${a.title}</strong><small>${a.desc}</small></div></div>
+  `).join('') || '<p style="color:var(--text-muted);font-size:13px;padding:8px 0">✅ Aucune alerte active</p>';
+  document.getElementById('alertsOverview').innerHTML = alertsHtml;
+}
+
+// ============================================================
+// CHANTIERS TABLE
+// ============================================================
+function renderChantiers() {
+  const sort = document.getElementById('fSort').value;
+  let d = [...filteredData];
+  if(sort==='date_saisie_desc') d.sort((a,b)=>(b.date_saisie||'')>(a.date_saisie||'')?1:-1);
+  if(sort==='date_saisie_asc') d.sort((a,b)=>(a.date_saisie||'')>(b.date_saisie||'')?1:-1);
+  if(sort==='ca_ht_desc') d.sort((a,b)=>b.ca_ht-a.ca_ht);
+  if(sort==='ca_ht_asc') d.sort((a,b)=>a.ca_ht-b.ca_ht);
+  if(sort==='client_asc') d.sort((a,b)=>a.client.localeCompare(b.client));
+
+  document.getElementById('chantiersCount').textContent = `📋 ${d.length} chantier${d.length>1?'s':''}`;
+
+  const avColor = v => v>=1?'green':v>=0.5?'blue':'orange';
+  document.getElementById('chantiersBody').innerHTML = d.map(r=>`
+    <tr>
+      <td style="white-space:nowrap;font-size:12px;">${r.date_saisie?r.date_saisie.split('-').reverse().join('/'):'—'}</td>
+      <td style="font-size:11px;color:var(--text-muted);">${String(r.devis).slice(0,8)}</td>
+      <td style="font-weight:600;max-width:150px;">${r.client.trim()}</td>
+      <td><span style="font-size:12px;color:var(--text-light);">${r.type_chantier}</span></td>
+      <td>${realBadge(r.type_realisation)}</td>
+      <td style="font-weight:700;text-align:right;">${fmt(r.ca_ht)}</td>
+      <td style="min-width:100px;">${progBar(r.avancement,avColor(r.avancement))}</td>
+      <td style="text-align:right;">${fmt(r.facture_total)}</td>
+      <td style="text-align:right;${r.encours>2000&&r.statut==='Terminé'?'color:var(--danger);font-weight:700;':''}">${fmt(r.encours)}</td>
+      <td style="text-align:right;">${fmt(r.reste_facturer)}</td>
+      <td>${statutBadge(r.statut)}</td>
+    </tr>
+  `).join('');
+}
+
+// ============================================================
+// CLIENTS
+// ============================================================
+function renderClients() {
+  const d = filteredData;
+  const clientMap = {};
+  d.forEach(r=>{
+    const c = r.client.trim();
+    if(!clientMap[c]) clientMap[c]={ca:0,fact:0,enc:0,raf:0,chantiers:[],statuts:{}};
+    clientMap[c].ca+=r.ca_ht; clientMap[c].fact+=r.facture_total; clientMap[c].enc+=r.encours; clientMap[c].raf+=r.reste_facturer;
+    clientMap[c].chantiers.push(r);
+    clientMap[c].statuts[r.statut]=(clientMap[c].statuts[r.statut]||0)+1;
+  });
+
+  const sorted = Object.entries(clientMap).sort((a,b)=>b[1].ca-a[1].ca);
+
+  // Bar chart
+  destroyChart('chartClients');
+  const labels = sorted.map(([n])=>n.length>12?n.slice(0,12)+'…':n);
+  charts['chartClients'] = new Chart(document.getElementById('chartClients'), {
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'CA Signé HT',data:sorted.map(([,v])=>v.ca),backgroundColor:'rgba(30,58,95,0.75)',borderRadius:6},
+      {label:'Facturé HT',data:sorted.map(([,v])=>v.fact),backgroundColor:'rgba(39,174,96,0.7)',borderRadius:6}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{font:{size:11}}}},scales:{x:{ticks:{callback:v=>v>=1000?Math.round(v/1000)+'k':v}}}}
+  });
+
+  // Cards
+  document.getElementById('clientCards').innerHTML = sorted.map(([name,v])=>{
+    const statBadges = Object.entries(v.statuts).map(([s,n])=>`${statutBadge(s)} ×${n}`).join(' ');
+    return `<div class="chart-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+        <div style="font-weight:700;font-size:14px;">${name}</div>
+        <div style="font-size:20px;font-weight:800;color:var(--primary);">${fmt(v.ca)}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">${statBadges}</div>
+      <div class="marge-bar"><div class="marge-bar-label">Facturé</div><div class="marge-bar-track"><div class="marge-bar-fill" style="width:${v.ca?Math.min(100,v.fact/v.ca*100):0}%;background:var(--success);"></div></div><div class="marge-bar-val">${fmt(v.fact)}</div></div>
+      ${v.enc>0?`<div class="marge-bar"><div class="marge-bar-label" style="color:var(--danger);">⚠ Encours</div><div class="marge-bar-track"><div class="marge-bar-fill" style="width:${v.ca?Math.min(100,v.enc/v.ca*100):0}%;background:var(--danger);"></div></div><div class="marge-bar-val" style="color:var(--danger);">${fmt(v.enc)}</div></div>`:''}
+      <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">${v.chantiers.length} chantier${v.chantiers.length>1?'s':''} • Reste à facturer: ${fmt(v.raf)}</div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// SOUS-TRAITANTS
+// ============================================================
+function renderST() {
+  const d = filteredData;
+  const stMap = {};
+  d.forEach(r=>{
+    if(r.st_devise>0||r.st_facture>0) {
+      // Try to get ST name from commentaire context - use chantier client as proxy
+      const stKey = r.client.trim();
+      if(!stMap[stKey]) stMap[stKey]={devise:0,facture:0,chantiers:0};
+      stMap[stKey].devise+=r.st_devise; stMap[stKey].facture+=r.st_facture; stMap[stKey].chantiers++;
+    }
+  });
+
+  const labels = Object.keys(stMap);
+  const devises = labels.map(k=>stMap[k].devise);
+  const factures = labels.map(k=>stMap[k].facture);
+
+  destroyChart('chartST');
+  charts['chartST'] = new Chart(document.getElementById('chartST'), {
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'Devisé HT',data:devises,backgroundColor:'rgba(30,58,95,0.7)',borderRadius:6},
+      {label:'Facturé HT',data:factures,backgroundColor:'rgba(39,174,96,0.7)',borderRadius:6}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{font:{size:11}}}},scales:{x:{ticks:{callback:v=>v>=1000?Math.round(v/1000)+'k':v}}}}
+  });
+
+  // Total ST
+  const totDev = d.reduce((s,r)=>s+r.st_devise,0);
+  const totFact = d.reduce((s,r)=>s+r.st_facture,0);
+  document.getElementById('stDetail').innerHTML = `
+    <div class="kpi-card blue" style="margin-bottom:10px;"><div class="kpi-label">Total ST Devisé</div><div class="kpi-value" style="font-size:18px;">${fmt(totDev)}</div></div>
+    <div class="kpi-card green" style="margin-bottom:10px;"><div class="kpi-label">Total ST Facturé</div><div class="kpi-value" style="font-size:18px;">${fmt(totFact)}</div></div>
+    <div class="kpi-card orange"><div class="kpi-label">En attente facturation ST</div><div class="kpi-value" style="font-size:18px;">${fmt(totDev-totFact)}</div></div>
+  `;
+}
+
+// ============================================================
+// MARGE & COUTS
+// ============================================================
+function renderMarge() {
+  const caInt = PARAMS.p_ca_int_cumul;
+  const cout = PARAMS.p_cout_cumul;
+  const marge = PARAMS.p_marge;
+  const taux = PARAMS.p_taux_couv;
+  const projCA = caInt * PARAMS.p_jours_an / PARAMS.p_jours_eco;
+  const projCout = cout * PARAMS.p_jours_an / PARAMS.p_jours_eco;
+
+  document.getElementById('margeKpis').innerHTML = `
+    <div class="kpi-card blue"><div class="kpi-icon">📅</div><div class="kpi-label">Jours ouvrés écoulés</div><div class="kpi-value">${PARAMS.p_jours_eco}</div><div class="kpi-sub">sur ${PARAMS.p_jours_an} jours</div></div>
+    <div class="kpi-card green"><div class="kpi-icon">💰</div><div class="kpi-label">CA Interne cumulé</div><div class="kpi-value">${fmt(caInt)}</div><div class="kpi-sub">Projections: ${fmt(projCA)}</div></div>
+    <div class="kpi-card orange"><div class="kpi-icon">👷</div><div class="kpi-label">Coût salarial cumulé</div><div class="kpi-value">${fmt(cout)}</div><div class="kpi-sub">${fmt(PARAMS.p_cout_jour)}/jour</div></div>
+    <div class="kpi-card ${marge>=0?'green':'red'}"><div class="kpi-icon">📈</div><div class="kpi-label">Marge interne</div><div class="kpi-value">${fmt(marge)}</div><div class="kpi-sub">${pct(caInt?marge/caInt:0)} du CA int.</div></div>
+    <div class="kpi-card ${taux>=1?'green':taux>=0.8?'orange':'red'}"><div class="kpi-icon">🎯</div><div class="kpi-label">Taux de couverture</div><div class="kpi-value">${taux.toFixed(2)}x</div><div class="kpi-sub">${taux>=1?'✅ Bon':'⚠️ Tendu'}</div></div>
+    <div class="kpi-card blue"><div class="kpi-icon">👥</div><div class="kpi-label">ETP œuvrants</div><div class="kpi-value">${PARAMS.p_etp}</div><div class="kpi-sub">Taux: ${PARAMS.p_taux_h}€/h</div></div>
+  `;
+
+  destroyChart('chartMarge');
+  charts['chartMarge'] = new Chart(document.getElementById('chartMarge'), {
+    type:'bar',
+    data:{labels:['CA Interne cumulé','Coût salarial cumulé','Projection CA (annuel)','Projection Coût (annuel)'],
+      datasets:[{data:[caInt,cout,projCA,projCout],backgroundColor:['rgba(39,174,96,0.8)','rgba(231,76,60,0.8)','rgba(39,174,96,0.4)','rgba(231,76,60,0.4)'],borderRadius:8}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v>=1000?Math.round(v/1000)+'k €':v+' €'}}}}
+  });
+
+  // Details
+  const jrRestants = PARAMS.p_jours_an - PARAMS.p_jours_eco;
+  const progPct = PARAMS.p_jours_eco / PARAMS.p_jours_an;
+  document.getElementById('margeDetails').innerHTML = `
+    <div style="margin-bottom:14px;">
+      <div class="marge-bar">
+        <div class="marge-bar-label">Progression année</div>
+        <div class="marge-bar-track"><div class="marge-bar-fill" style="width:${progPct*100}%;background:var(--primary);"></div></div>
+        <div class="marge-bar-val">${(progPct*100).toFixed(0)}%</div>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${jrRestants} jours ouvrés restants</div>
+    </div>
+    <div style="padding:12px;background:#F0FDF4;border-radius:10px;border:1px solid #BBF7D0;margin-bottom:10px;">
+      <div style="font-size:12px;font-weight:700;color:#065F46;margin-bottom:4px;">📈 Projection annuelle CA Interne</div>
+      <div style="font-size:20px;font-weight:800;color:#065F46;">${fmt(projCA)}</div>
+    </div>
+    <div style="padding:12px;background:#FFF7ED;border-radius:10px;border:1px solid #FED7AA;">
+      <div style="font-size:12px;font-weight:700;color:#9A3412;margin-bottom:4px;">👷 Projection annuelle Coût</div>
+      <div style="font-size:20px;font-weight:800;color:#9A3412;">${fmt(projCout)}</div>
+    </div>
+    <div style="margin-top:10px;padding:12px;background:${marge>=0?'#F0FDF4':'#FFF5F5'};border-radius:10px;border:1px solid ${marge>=0?'#BBF7D0':'#FECACA'};">
+      <div style="font-size:12px;font-weight:700;color:${marge>=0?'#065F46':'#991B1B'};margin-bottom:4px;">${marge>=0?'✅':'🚨'} Marge interne cumulée</div>
+      <div style="font-size:20px;font-weight:800;color:${marge>=0?'#065F46':'#991B1B'};">${fmt(marge)}</div>
+    </div>
+  `;
+}
+
+// ============================================================
+// ALERTES
+// ============================================================
+function getAlerts(d) {
+  const critical = [], warning = [], info = [];
+  d.forEach(r=>{
+    if(r.statut==='Terminé' && r.encours>2000)
+      critical.push({level:'critical',icon:'🚨',title:`${r.client.trim()} — Encours non facturé`,desc:`Chantier terminé • ${fmt(r.encours)} à facturer d'urgence`});
+    if(r.statut==='Terminé' && r.encours>0 && r.encours<=2000)
+      warning.push({level:'warning',icon:'⚠️',title:`${r.client.trim()} — Encours à régulariser`,desc:`${fmt(r.encours)} à facturer`});
+    if(['En cours','Planifié'].includes(r.statut) && !(+r.acompte_facture>0) && r.ca_ht>3000)
+      critical.push({level:'critical',icon:'🚨',title:`${r.client.trim()} — Pas d'acompte`,desc:`${r.statut} • CA: ${fmt(r.ca_ht)} — Demander acompte`});
+    if(r.statut==='En cours' && r.avancement<0.3 && r.ca_ht>5000)
+      warning.push({level:'warning',icon:'⚠️',title:`${r.client.trim()} — Chantier qui traîne`,desc:`Avancement: ${Math.round(r.avancement*100)}% • CA: ${fmt(r.ca_ht)}`});
+    if(r.statut==='A planifier' && r.ca_ht>3000)
+      info.push({level:'info',icon:'📋',title:`${r.client.trim()} — À planifier`,desc:`${fmt(r.ca_ht)} en attente de planification`});
+  });
+  return {critical,warning,info};
+}
+
+function renderAlertes() {
+  const alerts = getAlerts(filteredData);
+  const renderList = (items, el) => {
+    el.innerHTML += items.length ? items.map(a=>`<div class="alert-item ${a.level}"><span class="alert-badge">${a.icon}</span><div class="alert-content"><strong>${a.title}</strong><small>${a.desc}</small></div></div>`).join('') : '<p style="color:var(--text-muted);font-size:13px;padding:8px 0;">Aucune alerte</p>';
+  };
+  document.getElementById('alertsCrit').innerHTML = `<div class="chart-title" style="color:var(--danger);">🚨 Critiques (${alerts.critical.length})</div>`;
+  document.getElementById('alertsWarn').innerHTML = `<div class="chart-title" style="color:var(--warning);">⚠️ Attention (${alerts.warning.length})</div>`;
+  document.getElementById('alertsInfo').innerHTML = `<div class="chart-title" style="color:var(--info);">📋 Suivi (${alerts.info.length})</div>`;
+  renderList(alerts.critical, document.getElementById('alertsCrit'));
+  renderList(alerts.warning, document.getElementById('alertsWarn'));
+  renderList(alerts.info, document.getElementById('alertsInfo'));
+}
+
+// ============================================================
+// IMPORT / EXPORT CSV
+// ============================================================
+function exportCSV() {
+  const headers = Object.keys(filteredData[0]||data[0]);
+  const rows = filteredData.map(r=>headers.map(h=>{
+    const v = r[h];
+    if(typeof v==='string' && v.includes(',')) return `"${v}"`;
+    return v??'';
+  }).join(';'));
+  const csv = [headers.join(';'), ...rows].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download = `ARMOR_RENOV_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      let text = e.target.result;
+      text = text.replace(/^\uFEFF/, '');
+      text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+      // Tokenise le CSV entier en respectant les guillemets (y compris \n dans les cellules)
+      function tokenizeCSV(text) {
+        const rows = [];
+        let cur = '', inQ = false;
+        for (let i = 0; i < text.length; i++) {
+          const ch = text[i];
+          if (ch === '"') { inQ = !inQ; cur += ch; }
+          else if (ch === '\n' && !inQ) { if (cur.trim()) rows.push(cur); cur = ''; }
+          else { cur += ch; }
+        }
+        if (cur.trim()) rows.push(cur);
+        return rows;
+      }
+
+      // Parse une ligne CSV en respectant les guillemets
+      function parseLine(line) {
+        const res = []; let cur = '', inQ = false;
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (ch === '"') { inQ = !inQ; }
+          else if (ch === ';' && !inQ) { res.push(cur.trim()); cur = ''; }
+          else { cur += ch; }
+        }
+        res.push(cur.trim());
+        return res;
+      }
+
+      // Nettoie "1 650,00 €" → 1650.00
+      function parseMoney(v) {
+        if (!v) return 0;
+        return parseFloat(String(v).replace(/€/g,'').replace(/\s/g,'').replace(',','.')) || 0;
+      }
+
+      // Nettoie "75%" ou "0,75" → 0.75
+      function parsePct(v) {
+        if (!v) return 0;
+        const s = String(v).replace('%','').replace(',','.').trim();
+        const n = parseFloat(s) || 0;
+        return n > 1 ? n / 100 : n;
+      }
+
+      // "05/01/2026" → "2026-01-05"
+      function parseDate(v) {
+        if (!v) return '';
+        const p = String(v).split('/');
+        return p.length === 3 ? `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}` : v;
+      }
+
+      const rows = tokenizeCSV(text);
+      if (rows.length < 2) { alert('❌ Fichier CSV vide.'); return; }
+
+      // Headers : retire guillemets, remplace \n par espace, normalise
+      const rawH = parseLine(rows[0]);
+      const headers = rawH.map(h => h.replace(/"/g,'').replace(/\n/g,' ').trim());
+
+      // Clé normalisée (sans accents, sans espaces, minuscules)
+      function norm(s) {
+        return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+      }
+
+      const hMap = {};
+      headers.forEach((h, i) => { hMap[norm(h)] = i; });
+
+      function get(vals, ...keys) {
+        for (const k of keys) {
+          const idx = hMap[norm(k)];
+          if (idx !== undefined && vals[idx] !== undefined)
+            return vals[idx].replace(/"/g,'').trim();
+        }
+        return '';
+      }
+
+      const newData = rows.slice(1).map(line => {
+        const v = parseLine(line);
+        const client = get(v, 'Client');
+        if (!client) return null;
+        return {
+          date_saisie:      parseDate(get(v, 'Date Saisie', 'Date\nSaisie')),
+          devis:            get(v, 'N° Devis', 'N Devis'),
+          client:           client,
+          adresse:          get(v, 'Adresse'),
+          statut:           get(v, 'Statut'),
+          type_realisation: get(v, 'Type Réalisation', 'Type\nRéalisation', 'Type Realisation'),
+          type_chantier:    get(v, 'Type Chantier', 'Type\nChantier'),
+          ca_ht:            parseMoney(get(v, 'CA Total\nHT (€)', 'CA Total HT (€)', 'ca_ht')),
+          avancement:       parsePct(get(v, 'Avancement')),
+          ca_theo:          parseMoney(get(v, 'CA Théo\nProduit (€)', 'CA Théo Produit (€)', 'ca_theo')),
+          acompte_facture:  parseMoney(get(v, 'Acompte\nFacturé (€)', 'Acompte Facturé (€)', 'acompte_facture')),
+          acompte_pct:      parsePct(get(v, 'Acompte\n%', 'Acompte %', 'acompte_pct')),
+          encours:          parseMoney(get(v, 'Encours\nHT (€)', 'Encours HT (€)', 'encours')),
+          facture_total:    parseMoney(get(v, 'Facturé\nTotal (€)', 'Facturé Total (€)', 'facture_total')),
+          reste_facturer:   parseMoney(get(v, 'Reste à\nFacturer (€)', 'Reste à Facturer (€)', 'reste_facturer')),
+          commentaire:      get(v, 'Commentaire'),
+          st_name:          get(v, 'ST Nom', 'st_name'),
+          st_corps:         get(v, "ST Corps\nd'état", "ST Corps d'état", 'st_corps'),
+          st_devise:        parseMoney(get(v, 'ST Devisé\nHT (€)', 'ST Devisé HT (€)', 'st_devise')),
+          st_facture:       parseMoney(get(v, 'ST Facturé\nHT (€)', 'ST Facturé HT (€)', 'st_facture')),
+        };
+      }).filter(r => r !== null);
+
+      if (newData.length > 0) {
+        data = newData;
+        filteredData = [...data];
+        document.getElementById('updateDate').textContent = `📅 Importé : ${new Date().toLocaleDateString('fr-FR')}`;
+        saveToStorage(data, new Date().toLocaleDateString('fr-FR'));
+        setupFilters();
+        renderAll();
+        alert(`✅ Import réussi : ${data.length} chantiers chargés`);
+      } else {
+        alert('⚠️ Aucun chantier trouvé. Vérifiez que la colonne "Client" est renseignée.');
+      }
+    } catch(e) { alert('❌ Erreur import: ' + e.message); }
+    event.target.value = '';
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+
+function resetData() {
+  if (confirm('Effacer les données sauvegardées et revenir aux données initiales ?')) {
+    clearStorage();
+    data = RAW_DATA.map(r=>({...r, ca_ht:+r.ca_ht||0, encours:+r.encours||0, facture_total:+r.facture_total||0, reste_facturer:+r.reste_facturer||0, avancement:+r.avancement||0, st_devise:+r.st_devise||0, st_facture:+r.st_facture||0}));
+    filteredData = [...data];
+    document.getElementById('updateDate').textContent = '📅 Données initiales';
+    setupFilters();
+    renderAll();
+    alert('✅ Données réinitialisées.');
+  }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+
+// Restaurer la date d'import si données sauvegardées
+if (_importDate) {
+  document.getElementById('updateDate').textContent = `📅 Importé : ${_importDate} (sauvegardé)`;
+}
+
+setupFilters();
+renderAll();
+</script>
+</body>
+</html>
